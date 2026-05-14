@@ -1,0 +1,11 @@
+# Vishra AI
+
+> Autonomous intelligence systems and AI infrastructure for modern enterprises. A division of NexVark Industries.
+
+## Pages
+- [Home](/): Engineering Autonomous Intelligence — overview of Vishra AI
+- [Solutions](/solutions): AI automation, agents, infrastructure and workflow intelligence
+- [Pricing](/pricing): Vishra Core, Nexus and Titan engagement tiers
+- [Case Studies](/case-studies): Production deployments and outcomes
+- [About](/about): NexVark Industries and the Vishra AI mission
+- [Contact](/contact): Request Intelligence Mapping
