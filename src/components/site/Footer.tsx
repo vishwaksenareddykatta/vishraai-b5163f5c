@@ -1,7 +1,30 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import logo from "@/assets/vishra-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function Footer() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    const { error } = await supabase
+      .from("newsletter_subscribers")
+      .insert({ email, source: "footer" });
+    setLoading(false);
+    if (error) {
+      if (error.code === "23505") toast.success("You're already subscribed.");
+      else toast.error("Could not subscribe. Try again.");
+      return;
+    }
+    toast.success("Subscribed. Welcome to Vishra signal.");
+    setEmail("");
+  };
+
   return (
     <footer className="relative mt-32 border-t border-white/10">
       <div className="absolute inset-0 grid-bg pointer-events-none opacity-50" />
@@ -15,14 +38,17 @@ export function Footer() {
             <p className="mt-4 max-w-sm text-sm text-muted-foreground">
               Engineering autonomous intelligence systems for modern businesses. A division of NexVark Industries.
             </p>
-            <form className="mt-6 glass rounded-full p-1 flex items-center max-w-sm">
+            <form onSubmit={handleSubscribe} className="mt-6 glass rounded-full p-1 flex items-center max-w-sm">
               <input
                 type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
                 className="flex-1 bg-transparent px-4 py-2 text-sm outline-none placeholder:text-muted-foreground"
               />
-              <button className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-medium">
-                Subscribe
+              <button disabled={loading} className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-medium disabled:opacity-60">
+                {loading ? "…" : "Subscribe"}
               </button>
             </form>
           </div>
