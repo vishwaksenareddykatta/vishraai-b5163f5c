@@ -1,7 +1,30 @@
 import { Link } from "@tanstack/react-router";
+import { useState } from "react";
 import logo from "@/assets/vishra-logo.png";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export function Footer() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email) return;
+    setLoading(true);
+    const { error } = await supabase
+      .from("newsletter_subscribers")
+      .insert({ email, source: "footer" });
+    setLoading(false);
+    if (error) {
+      if (error.code === "23505") toast.success("You're already subscribed.");
+      else toast.error("Could not subscribe. Try again.");
+      return;
+    }
+    toast.success("Subscribed. Welcome to Vishra signal.");
+    setEmail("");
+  };
+
   return (
     <footer className="relative mt-32 border-t border-white/10">
       <div className="absolute inset-0 grid-bg pointer-events-none opacity-50" />
