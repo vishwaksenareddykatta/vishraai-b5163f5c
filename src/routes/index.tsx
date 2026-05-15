@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GlassCard, SectionHeader } from "@/components/site/Glass";
-import { Orb } from "@/components/site/Background";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -50,9 +49,27 @@ function HomePage() {
   return (
     <main>
       {/* HERO */}
-      <section className="relative pt-40 pb-32 px-6">
+      <section className="relative pt-40 pb-32 px-6 overflow-hidden">
+        {/* Animated orbital rings — replaces the big circle */}
+        <div aria-hidden className="pointer-events-none absolute inset-x-0 top-10 mx-auto h-[420px] w-[420px] md:h-[560px] md:w-[560px]">
+          <div className="absolute inset-0 rounded-full border border-primary/20 animate-[spin_28s_linear_infinite]">
+            <span className="absolute -top-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_18px_oklch(0.78_0.18_215/0.9)]" />
+          </div>
+          <div className="absolute inset-8 rounded-full border border-white/10 animate-[spin_42s_linear_infinite_reverse]">
+            <span className="absolute top-1/2 -right-1 h-2 w-2 -translate-y-1/2 rounded-full bg-[oklch(0.65_0.22_295)] shadow-[0_0_14px_oklch(0.65_0.22_295/0.9)]" />
+          </div>
+          <div className="absolute inset-20 rounded-full border border-primary/10 animate-[spin_18s_linear_infinite]">
+            <span className="absolute -bottom-1 left-1/3 h-1.5 w-1.5 rounded-full bg-white/80" />
+          </div>
+          {/* Scanning sweep */}
+          <div className="absolute inset-0 rounded-full overflow-hidden">
+            <div className="absolute inset-0 bg-[conic-gradient(from_0deg,transparent_0deg,oklch(0.78_0.18_215/0.18)_30deg,transparent_60deg)] animate-[spin_8s_linear_infinite]" />
+          </div>
+          {/* Core node */}
+          <div className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary shadow-[0_0_24px_oklch(0.78_0.18_215/0.9)] animate-pulse" />
+        </div>
+
         <div className="mx-auto max-w-6xl text-center relative">
-          <Orb className="absolute -top-20 left-1/2 -translate-x-1/2 h-72 w-72 opacity-60 animate-float pointer-events-none" />
           <span className="inline-flex items-center gap-2 glass rounded-full px-4 py-1.5 text-xs uppercase tracking-[0.2em] text-primary mb-6 relative">
             <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
             A division of NexVark Industries
