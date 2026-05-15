@@ -32,7 +32,7 @@ export function Footer() {
         <div className="grid gap-12 md:grid-cols-4">
           <div className="md:col-span-2">
             <div className="flex items-center gap-2">
-              <img src={logo} alt="Vishra AI" className="h-9 w-9" />
+              <img src={logo} alt="Vishra AI" className="h-9 w-9" loading="lazy" decoding="async" />
               <span className="font-display text-lg font-semibold">Vishra<span className="text-glow"> AI</span></span>
             </div>
             <p className="mt-4 max-w-sm text-sm text-muted-foreground">
