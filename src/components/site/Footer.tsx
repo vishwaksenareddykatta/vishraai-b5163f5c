@@ -38,14 +38,17 @@ export function Footer() {
             <p className="mt-4 max-w-sm text-sm text-muted-foreground">
               Engineering autonomous intelligence systems for modern businesses. A division of NexVark Industries.
             </p>
-            <form className="mt-6 glass rounded-full p-1 flex items-center max-w-sm">
+            <form onSubmit={handleSubscribe} className="mt-6 glass rounded-full p-1 flex items-center max-w-sm">
               <input
                 type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@company.com"
                 className="flex-1 bg-transparent px-4 py-2 text-sm outline-none placeholder:text-muted-foreground"
               />
-              <button className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-medium">
-                Subscribe
+              <button disabled={loading} className="rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-medium disabled:opacity-60">
+                {loading ? "…" : "Subscribe"}
               </button>
             </form>
           </div>
