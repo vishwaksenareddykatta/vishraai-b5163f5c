@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { GlassCard, PageShell } from "@/components/site/Glass";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/contact")({
   component: ContactPage,
@@ -64,10 +66,28 @@ function ContactPage() {
                 </div>
 
                 <form
-                  onSubmit={(e) => {
+                  onSubmit={async (e) => {
                     e.preventDefault();
-                    if (step < steps.length - 1) setStep(step + 1);
-                    else setSubmitted(true);
+                    if (step < steps.length - 1) {
+                      setStep(step + 1);
+                      return;
+                    }
+                    const { error } = await supabase.from("contact_submissions").insert({
+                      company: form.company,
+                      company_size: form.size,
+                      role: form.role,
+                      workflows: form.workflows,
+                      stack: form.stack,
+                      goals: form.goals,
+                      scale: form.scale,
+                      email: form.email,
+                      source: "contact_form",
+                    });
+                    if (error) {
+                      toast.error("Submission failed. Please try again.");
+                      return;
+                    }
+                    setSubmitted(true);
                   }}
                   className="space-y-4"
                 >
