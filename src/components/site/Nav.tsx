@@ -31,7 +31,7 @@ export function Nav() {
       >
         <div className="flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 pl-2">
-            <img src={logo} alt="Vishra AI logo" className="h-8 w-8 object-contain drop-shadow-[0_0_12px_oklch(0.78_0.18_215/0.6)]" />
+            <img src={logo} alt="Vishra AI logo" width={32} height={32} decoding="async" fetchPriority="high" className="h-8 w-8 object-contain drop-shadow-[0_0_12px_oklch(0.78_0.18_215/0.6)]" />
             <span className="font-display text-base font-semibold tracking-tight">
               Vishra<span className="text-glow"> AI</span>
             </span>
