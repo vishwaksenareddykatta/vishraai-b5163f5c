@@ -83,35 +83,23 @@ const terms = [
 ];
 
 function PricingPage() {
-  const [region, setRegion] = useState<Region>("INTL");
-  const [autoDetected, setAutoDetected] = useState(false);
+  const [region, setRegion] = useState<Region | null>(null);
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("vishra-region") : null;
-    if (stored === "IN" || stored === "INTL") {
-      setRegion(stored);
-      return;
-    }
+    try { localStorage.removeItem("vishra-region"); } catch {}
     const ctrl = new AbortController();
     fetch("https://ipapi.co/json/", { signal: ctrl.signal })
       .then((r) => r.json())
       .then((d: { country_code?: string }) => {
-        const r: Region = d?.country_code === "IN" ? "IN" : "INTL";
-        setRegion(r);
-        setAutoDetected(true);
+        setRegion(d?.country_code === "IN" ? "IN" : "INTL");
       })
-      .catch(() => {});
+      .catch(() => setRegion("INTL"));
     return () => ctrl.abort();
   }, []);
 
-  const setRegionManual = (r: Region) => {
-    setRegion(r);
-    setAutoDetected(false);
-    try { localStorage.setItem("vishra-region", r); } catch {}
-  };
-
   const tiers = region === "IN" ? tiersINR : tiersUSD;
   const discovery = region === "IN" ? discoveryINR : discoveryUSD;
+  const regionLabel = region === "IN" ? "🇮🇳 Indian pricing (INR)" : "🌍 International pricing (USD)";
 
   return (
     <PageShell>
