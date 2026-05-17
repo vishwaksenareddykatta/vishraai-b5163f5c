@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GlassCard, PageShell, SectionHeader } from "@/components/site/Glass";
 
@@ -6,71 +7,143 @@ export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "Pricing — Vishra AI" },
-      { name: "description", content: "Vishra Core, Nexus and Titan — engagement tiers for autonomous intelligence deployments." },
+      { name: "description", content: "Transparent pricing for Vishra AI engagements. Build fee + monthly maintenance. INR for India, USD international." },
       { property: "og:title", content: "Pricing — Vishra AI" },
       { property: "og:url", content: "/pricing" },
     ],
     links: [{ rel: "canonical", href: "/pricing" }],
-    scripts: [{
-      type: "application/ld+json",
-      children: JSON.stringify({
-        "@context": "https://schema.org",
-        "@type": "FAQPage",
-        mainEntity: [
-          { "@type": "Question", name: "How do Vishra engagements start?", acceptedAnswer: { "@type": "Answer", text: "Every engagement begins with an Intelligence Mapping session." } },
-          { "@type": "Question", name: "Do you offer ongoing support?", acceptedAnswer: { "@type": "Answer", text: "Yes — Operational Intelligence Continuity plans cover monitoring and expansion." } },
-        ],
-      }),
-    }],
   }),
 });
 
-const tiers = [
+type Region = "IN" | "INTL";
+
+const tiersINR = [
   {
-    name: "Vishra Core",
-    price: "$2,500",
-    sub: "starting / month",
-    desc: "For teams operationalizing their first autonomous workflows.",
-    features: ["Up to 3 deployed agents", "Standard integrations", "Observability dashboard", "Email support"],
+    name: "Starter",
+    desc: "WhatsApp bot, single workflow, basic AI chatbot",
+    build: "₹75,000",
+    monthly: "₹22,000",
+    breakeven: "Break-even at 3.4 months",
     highlight: false,
   },
   {
-    name: "Vishra Nexus",
-    price: "$6,500",
-    sub: "starting / month",
-    desc: "For scaled operations needing multi-agent coordination.",
-    features: ["Unlimited agents", "Multi-agent orchestration", "Custom integrations", "Priority engineering"],
+    name: "Growth",
+    desc: "Lead gen + CRM + multi-step automations",
+    build: "₹2,50,000",
+    monthly: "₹65,000",
+    breakeven: "Break-even at 3.8 months",
     highlight: true,
   },
   {
-    name: "Vishra Titan",
-    price: "$18,000+",
-    sub: "starting / month",
-    desc: "Enterprise-grade autonomous intelligence infrastructure.",
-    features: ["Private model deployment", "Dedicated AI engineers", "SLA + compliance", "On-prem options"],
+    name: "Enterprise",
+    desc: "Full AI agent ecosystem, unlimited integrations",
+    build: "₹8,00,000+",
+    monthly: "₹2,00,000",
+    breakeven: "Break-even at 4 months",
     highlight: false,
   },
 ];
 
-const faqs = [
-  { q: "How does Intelligence Mapping work?", a: "A focused diagnostic to identify the highest-leverage autonomy surfaces inside your operating graph." },
-  { q: "Can Vishra deploy on-premise?", a: "Yes. Titan engagements support fully isolated and on-premise deployments." },
-  { q: "What integrations are supported?", a: "All major SaaS, data warehouses, and custom internal APIs through our orchestration layer." },
-  { q: "Do you replace existing teams?", a: "No — Vishra augments operating teams with autonomous capacity." },
+const tiersUSD = [
+  {
+    name: "Starter",
+    desc: "Chatbot, single workflow, basic AI agent",
+    build: "$2,500",
+    monthly: "$700",
+    breakeven: "Break-even at 3.5 months",
+    highlight: false,
+  },
+  {
+    name: "Growth",
+    desc: "CRM + lead gen + multi-agent system",
+    build: "$6,500",
+    monthly: "$1,800",
+    breakeven: "Break-even at 3.6 months",
+    highlight: true,
+  },
+  {
+    name: "Enterprise",
+    desc: "Full AI ecosystem, custom-trained agents",
+    build: "$18,000+",
+    monthly: "$5,000",
+    breakeven: "Break-even at 3.6 months",
+    highlight: false,
+  },
+];
+
+const discoveryINR = "₹8,000";
+const discoveryUSD = "$400";
+
+const terms = [
+  { n: "01", t: "50% upfront — always", d: "We don't write a single line of code until the first payment clears. No exceptions." },
+  { n: "02", t: "50% before final delivery", d: "Balance is due before handover — not after review, not \"once they check.\" Before." },
+  { n: "03", t: "Retainers due on the 1st", d: "Monthly maintenance is invoiced on the 25th and due on the 1st of every month." },
+  { n: "04", t: "Late payment = work paused", d: "Payment delayed beyond 7 days means all active work stops immediately until cleared." },
+  { n: "05", t: "Discovery fee is pre-call", d: "The discovery session fee is paid before the call is scheduled. Not after. Not on the day." },
 ];
 
 function PricingPage() {
+  const [region, setRegion] = useState<Region>("INTL");
+  const [autoDetected, setAutoDetected] = useState(false);
+
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? localStorage.getItem("vishra-region") : null;
+    if (stored === "IN" || stored === "INTL") {
+      setRegion(stored);
+      return;
+    }
+    const ctrl = new AbortController();
+    fetch("https://ipapi.co/json/", { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then((d: { country_code?: string }) => {
+        const r: Region = d?.country_code === "IN" ? "IN" : "INTL";
+        setRegion(r);
+        setAutoDetected(true);
+      })
+      .catch(() => {});
+    return () => ctrl.abort();
+  }, []);
+
+  const setRegionManual = (r: Region) => {
+    setRegion(r);
+    setAutoDetected(false);
+    try { localStorage.setItem("vishra-region", r); } catch {}
+  };
+
+  const tiers = region === "IN" ? tiersINR : tiersUSD;
+  const discovery = region === "IN" ? discoveryINR : discoveryUSD;
+
   return (
     <PageShell>
       <section className="px-6">
         <div className="mx-auto max-w-5xl text-center">
           <span className="inline-block glass rounded-full px-3 py-1 text-xs uppercase tracking-[0.2em] text-primary mb-6">Pricing</span>
           <h1 className="text-5xl md:text-7xl font-semibold text-gradient leading-[1.05]">
-            Engagement tiers.
+            Transparent pricing.<br />No surprises.
           </h1>
           <p className="mt-6 mx-auto max-w-2xl text-muted-foreground">
-            Transparent starting points. Every deployment is scoped through Intelligence Mapping.
+            Two line items per engagement — a one-time build fee and a monthly maintenance fee. That's it.
           </p>
+
+          <div className="mt-10 inline-flex glass rounded-full p-1 text-sm">
+            <button
+              onClick={() => setRegionManual("IN")}
+              className={`px-5 py-2 rounded-full transition ${region === "IN" ? "bg-primary text-primary-foreground shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              🇮🇳 Indian clients (INR)
+            </button>
+            <button
+              onClick={() => setRegionManual("INTL")}
+              className={`px-5 py-2 rounded-full transition ${region === "INTL" ? "bg-primary text-primary-foreground shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]" : "text-muted-foreground hover:text-foreground"}`}
+            >
+              🌍 International (USD)
+            </button>
+          </div>
+          {autoDetected && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              Auto-detected from your location. You can switch anytime.
+            </p>
+          )}
         </div>
       </section>
 
@@ -79,58 +152,78 @@ function PricingPage() {
           {tiers.map((t) => (
             <div
               key={t.name}
-              className={`glass rounded-3xl p-8 transition-all duration-500 hover:-translate-y-1 ${
-                t.highlight ? "glow-ring" : "hover:border-white/20"
-              }`}
+              className={`relative glass rounded-3xl p-8 transition-all duration-500 hover:-translate-y-1 ${t.highlight ? "glow-ring" : "hover:border-white/20"}`}
             >
               {t.highlight && (
-                <span className="inline-block glass rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-primary mb-4">
-                  Most deployed
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 glass rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-primary">
+                  Most popular
                 </span>
               )}
               <h3 className="font-display font-semibold text-2xl">{t.name}</h3>
-              <p className="mt-3 text-sm text-muted-foreground">{t.desc}</p>
-              <div className="mt-6">
-                <p className="text-5xl font-semibold text-glow">{t.price}</p>
-                <p className="text-xs text-muted-foreground mt-1">{t.sub}</p>
+              <p className="mt-3 text-sm text-muted-foreground min-h-[40px]">{t.desc}</p>
+
+              <div className="mt-6 space-y-5">
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground">Build fee</p>
+                  <p className="text-4xl font-semibold text-glow mt-1">{t.build}</p>
+                  <p className="text-xs text-muted-foreground mt-1">One-time · 50% upfront required</p>
+                </div>
+                <div className="h-px bg-white/10" />
+                <div>
+                  <p className="text-xs uppercase tracking-widest text-muted-foreground">Monthly maintenance</p>
+                  <p className="text-2xl font-semibold mt-1">{t.monthly}<span className="text-sm text-muted-foreground"> /mo</span></p>
+                  <p className="text-xs text-muted-foreground mt-1">{t.breakeven}</p>
+                </div>
               </div>
-              <ul className="mt-6 space-y-3 text-sm">
-                {t.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <span className="h-4 w-4 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center text-[10px] text-primary">✓</span>
-                    <span className="text-muted-foreground">{f}</span>
-                  </li>
-                ))}
-              </ul>
+
               <Link
                 to="/contact"
-                className={`mt-8 block text-center rounded-full px-5 py-3 text-sm font-medium transition ${
-                  t.highlight
-                    ? "bg-primary text-primary-foreground shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]"
-                    : "glass hover:border-white/20"
-                }`}
+                className={`mt-8 block text-center rounded-full px-5 py-3 text-sm font-medium transition ${t.highlight ? "bg-primary text-primary-foreground shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]" : "glass hover:border-white/20"}`}
               >
-                Choose {t.name.split(" ")[1]}
+                Get started
               </Link>
             </div>
           ))}
         </div>
+
+        <div className="mx-auto max-w-6xl mt-6">
+          <GlassCard className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-4">
+              <span className="text-2xl">🔍</span>
+              <div>
+                <p className="font-display font-semibold text-lg">Discovery session</p>
+                <p className="text-sm text-muted-foreground">Paid before the call · scoping + business audit · 60 mins</p>
+              </div>
+            </div>
+            <p className="text-3xl font-semibold text-glow">{discovery}</p>
+          </GlassCard>
+        </div>
       </section>
 
       <section className="px-6 py-20">
-        <div className="mx-auto max-w-3xl">
-          <SectionHeader eyebrow="FAQ" title="Common questions." />
-          <div className="space-y-3">
-            {faqs.map((f) => (
-              <details key={f.q} className="glass rounded-2xl p-5 group">
-                <summary className="flex items-center justify-between cursor-pointer font-medium">
-                  {f.q}
-                  <span className="text-primary group-open:rotate-45 transition-transform">+</span>
-                </summary>
-                <p className="mt-3 text-sm text-muted-foreground">{f.a}</p>
-              </details>
+        <div className="mx-auto max-w-5xl">
+          <SectionHeader eyebrow="Non-negotiable" title="Payment terms." />
+          <p className="text-muted-foreground -mt-4 mb-8 max-w-2xl">
+            Every engagement runs on these terms — no exceptions, no delays, no excuses.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            {terms.map((t) => (
+              <div key={t.n} className="glass rounded-2xl p-6 hover:-translate-y-0.5 transition">
+                <div className="flex items-start gap-4">
+                  <span className="text-primary font-display font-semibold text-2xl">{t.n}</span>
+                  <div>
+                    <p className="font-semibold">{t.t}</p>
+                    <p className="text-sm text-muted-foreground mt-1">{t.d}</p>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
+          <GlassCard className="mt-8 p-6">
+            <p className="text-sm text-muted-foreground">
+              These rules protect your project timeline as much as ours. <span className="text-foreground font-medium">Why these terms?</span> Delayed payments kill momentum. When payment is tied to milestones, both sides stay accountable. We hold ourselves to the same standard — if we miss a deadline, we make it right. We ask the same from you.
+            </p>
+          </GlassCard>
         </div>
       </section>
     </PageShell>
