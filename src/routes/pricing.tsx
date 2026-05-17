@@ -83,35 +83,23 @@ const terms = [
 ];
 
 function PricingPage() {
-  const [region, setRegion] = useState<Region>("INTL");
-  const [autoDetected, setAutoDetected] = useState(false);
+  const [region, setRegion] = useState<Region | null>(null);
 
   useEffect(() => {
-    const stored = typeof window !== "undefined" ? localStorage.getItem("vishra-region") : null;
-    if (stored === "IN" || stored === "INTL") {
-      setRegion(stored);
-      return;
-    }
+    try { localStorage.removeItem("vishra-region"); } catch {}
     const ctrl = new AbortController();
     fetch("https://ipapi.co/json/", { signal: ctrl.signal })
       .then((r) => r.json())
       .then((d: { country_code?: string }) => {
-        const r: Region = d?.country_code === "IN" ? "IN" : "INTL";
-        setRegion(r);
-        setAutoDetected(true);
+        setRegion(d?.country_code === "IN" ? "IN" : "INTL");
       })
-      .catch(() => {});
+      .catch(() => setRegion("INTL"));
     return () => ctrl.abort();
   }, []);
 
-  const setRegionManual = (r: Region) => {
-    setRegion(r);
-    setAutoDetected(false);
-    try { localStorage.setItem("vishra-region", r); } catch {}
-  };
-
   const tiers = region === "IN" ? tiersINR : tiersUSD;
   const discovery = region === "IN" ? discoveryINR : discoveryUSD;
+  const regionLabel = region === "IN" ? "🇮🇳 Indian pricing (INR)" : "🌍 International pricing (USD)";
 
   return (
     <PageShell>
@@ -125,28 +113,21 @@ function PricingPage() {
             Two line items per engagement — a one-time build fee and a monthly maintenance fee. That's it.
           </p>
 
-          <div className="mt-10 inline-flex glass rounded-full p-1 text-sm">
-            <button
-              onClick={() => setRegionManual("IN")}
-              className={`px-5 py-2 rounded-full transition ${region === "IN" ? "bg-primary text-primary-foreground shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              🇮🇳 Indian clients (INR)
-            </button>
-            <button
-              onClick={() => setRegionManual("INTL")}
-              className={`px-5 py-2 rounded-full transition ${region === "INTL" ? "bg-primary text-primary-foreground shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]" : "text-muted-foreground hover:text-foreground"}`}
-            >
-              🌍 International (USD)
-            </button>
+          <div className="mt-10 inline-flex glass rounded-full px-5 py-2 text-sm text-muted-foreground">
+            {region === null ? "Detecting your region…" : regionLabel}
           </div>
-          {autoDetected && (
-            <p className="mt-3 text-xs text-muted-foreground">
-              Auto-detected from your location. You can switch anytime.
-            </p>
-          )}
         </div>
       </section>
 
+      {region === null ? (
+        <section className="px-6 py-16">
+          <div className="mx-auto max-w-6xl grid gap-6 md:grid-cols-3">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="glass rounded-3xl p-8 h-[420px] animate-pulse opacity-50" />
+            ))}
+          </div>
+        </section>
+      ) : (
       <section className="px-6 py-16">
         <div className="mx-auto max-w-6xl grid gap-6 md:grid-cols-3">
           {tiers.map((t) => (
@@ -199,6 +180,7 @@ function PricingPage() {
           </GlassCard>
         </div>
       </section>
+      )}
 
       <section className="px-6 py-20">
         <div className="mx-auto max-w-5xl">
