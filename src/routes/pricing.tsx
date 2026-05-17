@@ -128,9 +128,6 @@ function PricingPage() {
           </div>
         </section>
       ) : (
-        </div>
-      </section>
-
       <section className="px-6 py-16">
         <div className="mx-auto max-w-6xl grid gap-6 md:grid-cols-3">
           {tiers.map((t) => (
