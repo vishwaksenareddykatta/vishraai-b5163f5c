@@ -180,6 +180,7 @@ function PricingPage() {
           </GlassCard>
         </div>
       </section>
+      )}
 
       <section className="px-6 py-20">
         <div className="mx-auto max-w-5xl">
