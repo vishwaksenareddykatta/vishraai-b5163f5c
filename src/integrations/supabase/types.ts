@@ -56,6 +56,81 @@ export type Database = {
         }
         Relationships: []
       }
+      discovery_requests: {
+        Row: {
+          additional_notes: string | null
+          automation_goals: string
+          company_name: string
+          company_size: string
+          created_at: string
+          current_tech_stack: string | null
+          full_name: string
+          id: string
+          industry: string | null
+          infrastructure_scale: string | null
+          operations_volume: string | null
+          payment_region: string
+          payment_status: string
+          phone_number: string
+          preferred_contact_method: string[] | null
+          role: string
+          selected_pricing: string
+          submitted_at: string
+          user_country: string | null
+          whatsapp_number: string | null
+          work_email: string
+          workflows_to_automate: string
+        }
+        Insert: {
+          additional_notes?: string | null
+          automation_goals: string
+          company_name: string
+          company_size: string
+          created_at?: string
+          current_tech_stack?: string | null
+          full_name: string
+          id?: string
+          industry?: string | null
+          infrastructure_scale?: string | null
+          operations_volume?: string | null
+          payment_region: string
+          payment_status?: string
+          phone_number: string
+          preferred_contact_method?: string[] | null
+          role: string
+          selected_pricing: string
+          submitted_at?: string
+          user_country?: string | null
+          whatsapp_number?: string | null
+          work_email: string
+          workflows_to_automate: string
+        }
+        Update: {
+          additional_notes?: string | null
+          automation_goals?: string
+          company_name?: string
+          company_size?: string
+          created_at?: string
+          current_tech_stack?: string | null
+          full_name?: string
+          id?: string
+          industry?: string | null
+          infrastructure_scale?: string | null
+          operations_volume?: string | null
+          payment_region?: string
+          payment_status?: string
+          phone_number?: string
+          preferred_contact_method?: string[] | null
+          role?: string
+          selected_pricing?: string
+          submitted_at?: string
+          user_country?: string | null
+          whatsapp_number?: string | null
+          work_email?: string
+          workflows_to_automate?: string
+        }
+        Relationships: []
+      }
       newsletter_subscribers: {
         Row: {
           created_at: string

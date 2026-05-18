@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { GlassCard, PageShell, SectionHeader } from "@/components/site/Glass";
+import { useRegion } from "@/hooks/use-region";
 
 export const Route = createFileRoute("/pricing")({
   component: PricingPage,
@@ -15,60 +16,16 @@ export const Route = createFileRoute("/pricing")({
   }),
 });
 
-type Region = "IN" | "INTL";
-
 const tiersINR = [
-  {
-    name: "Starter",
-    desc: "WhatsApp bot, single workflow, basic AI chatbot",
-    build: "₹75,000",
-    monthly: "₹22,000",
-    breakeven: "Break-even at 3.4 months",
-    highlight: false,
-  },
-  {
-    name: "Growth",
-    desc: "Lead gen + CRM + multi-step automations",
-    build: "₹2,50,000",
-    monthly: "₹65,000",
-    breakeven: "Break-even at 3.8 months",
-    highlight: true,
-  },
-  {
-    name: "Enterprise",
-    desc: "Full AI agent ecosystem, unlimited integrations",
-    build: "₹8,00,000+",
-    monthly: "₹2,00,000",
-    breakeven: "Break-even at 4 months",
-    highlight: false,
-  },
+  { name: "Starter", desc: "WhatsApp bot, single workflow, basic AI chatbot", build: "₹75,000", monthly: "₹22,000", highlight: false },
+  { name: "Growth", desc: "Lead gen + CRM + multi-step automations", build: "₹2,50,000", monthly: "₹65,000", highlight: true },
+  { name: "Enterprise", desc: "Full AI agent ecosystem, unlimited integrations", build: "₹8,00,000+", monthly: "₹2,00,000", highlight: false },
 ];
 
 const tiersUSD = [
-  {
-    name: "Starter",
-    desc: "Chatbot, single workflow, basic AI agent",
-    build: "$2,500",
-    monthly: "$700",
-    breakeven: "Break-even at 3.5 months",
-    highlight: false,
-  },
-  {
-    name: "Growth",
-    desc: "CRM + lead gen + multi-agent system",
-    build: "$6,500",
-    monthly: "$1,800",
-    breakeven: "Break-even at 3.6 months",
-    highlight: true,
-  },
-  {
-    name: "Enterprise",
-    desc: "Full AI ecosystem, custom-trained agents",
-    build: "$18,000+",
-    monthly: "$5,000",
-    breakeven: "Break-even at 3.6 months",
-    highlight: false,
-  },
+  { name: "Starter", desc: "Chatbot, single workflow, basic AI agent", build: "$2,500", monthly: "$700", highlight: false },
+  { name: "Growth", desc: "CRM + lead gen + multi-agent system", build: "$6,500", monthly: "$1,800", highlight: true },
+  { name: "Enterprise", desc: "Full AI ecosystem, custom-trained agents", build: "$18,000+", monthly: "$5,000", highlight: false },
 ];
 
 const discoveryINR = "₹8,000";
@@ -83,20 +40,7 @@ const terms = [
 ];
 
 function PricingPage() {
-  const [region, setRegion] = useState<Region | null>(null);
-
-  useEffect(() => {
-    try { localStorage.removeItem("vishra-region"); } catch {}
-    const ctrl = new AbortController();
-    fetch("https://ipapi.co/json/", { signal: ctrl.signal })
-      .then((r) => r.json())
-      .then((d: { country_code?: string }) => {
-        setRegion(d?.country_code === "IN" ? "IN" : "INTL");
-      })
-      .catch(() => setRegion("INTL"));
-    return () => ctrl.abort();
-  }, []);
-
+  const { region } = useRegion();
   const tiers = region === "IN" ? tiersINR : tiersUSD;
   const discovery = region === "IN" ? discoveryINR : discoveryUSD;
   const regionLabel = region === "IN" ? "🇮🇳 Indian pricing (INR)" : "🌍 International pricing (USD)";
@@ -112,7 +56,6 @@ function PricingPage() {
           <p className="mt-6 mx-auto max-w-2xl text-muted-foreground">
             Two line items per engagement — a one-time build fee and a monthly maintenance fee. That's it.
           </p>
-
           <div className="mt-10 inline-flex glass rounded-full px-5 py-2 text-sm text-muted-foreground">
             {region === null ? "Detecting your region…" : regionLabel}
           </div>
@@ -123,63 +66,67 @@ function PricingPage() {
         <section className="px-6 py-16">
           <div className="mx-auto max-w-6xl grid gap-6 md:grid-cols-3">
             {[0, 1, 2].map((i) => (
-              <div key={i} className="glass rounded-3xl p-8 h-[420px] animate-pulse opacity-50" />
+              <div key={i} className="glass rounded-3xl p-8 h-[360px] animate-pulse opacity-50" />
             ))}
           </div>
         </section>
       ) : (
-      <section className="px-6 py-16">
-        <div className="mx-auto max-w-6xl grid gap-6 md:grid-cols-3">
-          {tiers.map((t) => (
-            <div
-              key={t.name}
-              className={`relative glass rounded-3xl p-8 transition-all duration-500 hover:-translate-y-1 ${t.highlight ? "glow-ring" : "hover:border-white/20"}`}
-            >
-              {t.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 glass rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-primary">
-                  Most popular
-                </span>
-              )}
-              <h3 className="font-display font-semibold text-2xl">{t.name}</h3>
-              <p className="mt-3 text-sm text-muted-foreground min-h-[40px]">{t.desc}</p>
-
-              <div className="mt-6 space-y-5">
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground">Build fee</p>
-                  <p className="text-4xl font-semibold text-glow mt-1">{t.build}</p>
-                  <p className="text-xs text-muted-foreground mt-1">One-time · 50% upfront required</p>
-                </div>
-                <div className="h-px bg-white/10" />
-                <div>
-                  <p className="text-xs uppercase tracking-widest text-muted-foreground">Monthly maintenance</p>
-                  <p className="text-2xl font-semibold mt-1">{t.monthly}<span className="text-sm text-muted-foreground"> /mo</span></p>
-                  <p className="text-xs text-muted-foreground mt-1">{t.breakeven}</p>
-                </div>
-              </div>
-
-              <Link
-                to="/contact"
-                className={`mt-8 block text-center rounded-full px-5 py-3 text-sm font-medium transition ${t.highlight ? "bg-primary text-primary-foreground shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]" : "glass hover:border-white/20"}`}
+        <section className="px-6 py-16">
+          <div className="mx-auto max-w-6xl grid gap-6 md:grid-cols-3">
+            {tiers.map((t) => (
+              <div
+                key={t.name}
+                className={`relative glass rounded-3xl p-8 transition-all duration-500 hover:-translate-y-1 ${t.highlight ? "glow-ring" : "hover:border-white/20"}`}
               >
-                Get started
-              </Link>
-            </div>
-          ))}
-        </div>
+                {t.highlight && (
+                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 glass rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] text-primary">
+                    Most popular
+                  </span>
+                )}
+                <h3 className="font-display font-semibold text-2xl">{t.name}</h3>
+                <p className="mt-3 text-sm text-muted-foreground min-h-[40px]">{t.desc}</p>
 
-        <div className="mx-auto max-w-6xl mt-6">
-          <GlassCard className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-start gap-4">
-              <span className="text-2xl">🔍</span>
-              <div>
-                <p className="font-display font-semibold text-lg">Discovery session</p>
-                <p className="text-sm text-muted-foreground">Paid before the call · scoping + business audit · 60 mins</p>
+                <div className="mt-6 space-y-5">
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground">Build fee</p>
+                    <p className="text-4xl font-semibold text-glow mt-1">{t.build}</p>
+                    <p className="text-xs text-muted-foreground mt-1">One-time · 50% upfront required</p>
+                  </div>
+                  <div className="h-px bg-white/10" />
+                  <div>
+                    <p className="text-xs uppercase tracking-widest text-muted-foreground">Monthly maintenance</p>
+                    <p className="text-2xl font-semibold mt-1">{t.monthly}<span className="text-sm text-muted-foreground"> /mo</span></p>
+                  </div>
+                </div>
+
+                <Link
+                  to="/discovery"
+                  className={`mt-8 block text-center rounded-full px-5 py-3 text-sm font-medium transition ${t.highlight ? "bg-primary text-primary-foreground shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]" : "glass hover:border-white/20"}`}
+                >
+                  Get started
+                </Link>
               </div>
-            </div>
-            <p className="text-3xl font-semibold text-glow">{discovery}</p>
-          </GlassCard>
-        </div>
-      </section>
+            ))}
+          </div>
+
+          <div className="mx-auto max-w-6xl mt-6">
+            <GlassCard className="p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <span className="text-2xl">🔍</span>
+                <div>
+                  <p className="font-display font-semibold text-lg">Discovery session</p>
+                  <p className="text-sm text-muted-foreground">Paid before the call · scoping + business audit · 60 mins</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <p className="text-3xl font-semibold text-glow">{discovery}</p>
+                <Link to="/discovery" className="rounded-full bg-primary text-primary-foreground px-5 py-2.5 text-sm font-medium">
+                  Book now
+                </Link>
+              </div>
+            </GlassCard>
+          </div>
+        </section>
       )}
 
       <section className="px-6 py-20">
