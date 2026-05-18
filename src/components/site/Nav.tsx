@@ -52,10 +52,10 @@ export function Nav() {
           </ul>
           <div className="flex items-center gap-2">
             <Link
-              to="/contact"
+              to="/discovery"
               className="hidden md:inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90 transition shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]"
             >
-              Request Mapping
+              Book Discovery
             </Link>
             <button
               aria-label="Menu"
