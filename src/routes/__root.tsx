@@ -13,6 +13,8 @@ import { Nav } from "@/components/site/Nav";
 import { Footer } from "@/components/site/Footer";
 import { AmbientBackground } from "@/components/site/Background";
 import { Toaster } from "@/components/ui/sonner";
+import { startRegionDetection } from "@/lib/region";
+import { useEffect } from "react";
 
 function NotFoundComponent() {
   return (
@@ -130,6 +132,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => { void startRegionDetection(); }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
