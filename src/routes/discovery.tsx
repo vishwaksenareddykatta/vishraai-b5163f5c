@@ -52,9 +52,11 @@ const PAYMENT_BUTTON_INTL = "pl_SqftnOIdNHw4Sp";
 
 function DiscoveryPage() {
   const { region, country } = useRegion();
+  const save = useServerFn(saveDiscoveryRequest);
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [paymentId, setPaymentId] = useState("");
   const [form, setForm] = useState<Form>({
     full_name: "", work_email: "",
     phone_cc: "+91", phone_number: "",
@@ -67,7 +69,6 @@ function DiscoveryPage() {
     agree_contact: false, agree_updates: false,
   });
 
-  // Default phone country code to detected region
   useEffect(() => {
     if (region === "INTL" && form.phone_cc === "+91") {
       setForm((f) => ({ ...f, phone_cc: "+1", whatsapp_cc: "+1" }));
@@ -76,12 +77,33 @@ function DiscoveryPage() {
 
   const update = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Sync whatsapp when "same as phone" toggled
   useEffect(() => {
     if (form.same_as_phone) {
       setForm((f) => ({ ...f, whatsapp_cc: f.phone_cc, whatsapp_number: f.phone_number }));
     }
   }, [form.same_as_phone, form.phone_cc, form.phone_number]);
+
+  // Auto-detect Razorpay payment_id from postMessage events.
+  useEffect(() => {
+    function onMsg(e: MessageEvent) {
+      try {
+        if (typeof e.origin !== "string") return;
+        const host = new URL(e.origin).hostname;
+        if (!/razorpay\.com$/.test(host)) return;
+        const data: any = e.data;
+        if (!data) return;
+        const id = typeof data === "string"
+          ? data.match(/pay_[A-Za-z0-9]+/)?.[0]
+          : data.razorpay_payment_id || data.payment_id || data?.payload?.razorpay_payment_id;
+        if (id && typeof id === "string" && id.startsWith("pay_")) {
+          setPaymentId(id);
+          toast.success("Payment detected. Confirm to submit your request.");
+        }
+      } catch {}
+    }
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
 
   const pricingLabel = region === "IN" ? "₹8,000 INR" : "$400 USD";
 
@@ -97,47 +119,53 @@ function DiscoveryPage() {
     }
   }, [step, form]);
 
-  const submitToSupabase = async () => {
-    setSubmitting(true);
-    const { error } = await supabase.from("discovery_requests").insert({
-      full_name: form.full_name,
-      work_email: form.work_email,
-      phone_number: `${form.phone_cc} ${form.phone_number}`.trim(),
-      whatsapp_number: form.whatsapp_number ? `${form.whatsapp_cc} ${form.whatsapp_number}`.trim() : null,
-      company_name: form.company_name,
-      role: form.role,
-      company_size: form.company_size,
-      industry: form.industry || null,
-      workflows_to_automate: form.workflows_to_automate,
-      current_tech_stack: form.current_tech_stack || null,
-      automation_goals: form.automation_goals,
-      infrastructure_scale: form.infrastructure_scale || null,
-      operations_volume: form.operations_volume || null,
-      preferred_contact_method: form.preferred_contact_method.length ? form.preferred_contact_method : null,
-      additional_notes: form.additional_notes || null,
-      user_country: country,
-      payment_region: region ?? "INTL",
-      selected_pricing: region === "IN" ? "INR_8000" : "USD_400",
-      payment_status: "initiated",
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error("Couldn't save your request. Please try again.");
-      return false;
+  const submitAfterPayment = async () => {
+    if (!paymentId) {
+      toast.error("Enter your Razorpay payment ID after completing payment.");
+      return;
     }
-    return true;
+    setSubmitting(true);
+    try {
+      await save({ data: {
+        full_name: form.full_name,
+        work_email: form.work_email,
+        phone_number: `${form.phone_cc} ${form.phone_number}`.trim(),
+        whatsapp_number: form.whatsapp_number ? `${form.whatsapp_cc} ${form.whatsapp_number}`.trim() : null,
+        company_name: form.company_name,
+        role: form.role,
+        company_size: form.company_size,
+        industry: form.industry || null,
+        workflows_to_automate: form.workflows_to_automate,
+        current_tech_stack: form.current_tech_stack || null,
+        automation_goals: form.automation_goals,
+        infrastructure_scale: form.infrastructure_scale || null,
+        operations_volume: form.operations_volume || null,
+        preferred_contact_method: form.preferred_contact_method.length ? form.preferred_contact_method : null,
+        additional_notes: form.additional_notes || null,
+        user_country: country,
+        payment_region: (region ?? "INTL") as "IN" | "INTL",
+        selected_pricing: region === "IN" ? "INR_8000" : "USD_400",
+        razorpay_payment_id: paymentId,
+      } });
+      setSubmitted(true);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Couldn't save your request. Make sure MongoDB is reachable from the server.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <PageShell>
       <section className="px-6">
         <div className="mx-auto max-w-5xl text-center">
-          <span className="inline-block glass rounded-full px-3 py-1 text-xs uppercase tracking-[0.2em] text-primary mb-6">Discovery</span>
+          <span className="inline-block glass rounded-full px-3 py-1 text-xs uppercase tracking-[0.2em] text-primary mb-6">Intelligence Mapping</span>
           <h1 className="text-5xl md:text-7xl font-semibold text-gradient leading-[1.05]">
-            Map your operations.<br />Architect autonomy.
+            Request Intelligence Mapping.
           </h1>
           <p className="mt-6 mx-auto max-w-2xl text-muted-foreground">
-            A 60-minute diagnostic with our team. Tell us about your operations — we'll respond via email and WhatsApp.
+            This request leads to booking your discovery session — a 60-minute diagnostic with our team. Submission is confirmed only after payment succeeds.
           </p>
         </div>
       </section>
@@ -161,15 +189,10 @@ function DiscoveryPage() {
                   update={update}
                   region={region}
                   pricingLabel={pricingLabel}
+                  paymentId={paymentId}
+                  setPaymentId={setPaymentId}
                   submitting={submitting}
-                  onPay={async () => {
-                    const ok = await submitToSupabase();
-                    if (ok) {
-                      toast.success("Request saved. Complete payment to confirm.");
-                      // Show success after a short delay so the Razorpay button is still usable
-                      setTimeout(() => setSubmitted(true), 800);
-                    }
-                  }}
+                  onConfirm={submitAfterPayment}
                 />
               )}
 
@@ -192,8 +215,8 @@ function DiscoveryPage() {
                     Continue
                   </button>
                 ) : (
-                  <span className="text-xs text-muted-foreground max-w-[220px] text-right">
-                    Accept both confirmations to enable payment.
+                  <span className="text-xs text-muted-foreground max-w-[260px] text-right">
+                    Pay first, then confirm with your Razorpay payment ID.
                   </span>
                 )}
               </div>
