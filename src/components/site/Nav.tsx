@@ -53,9 +53,10 @@ export function Nav() {
           <div className="flex items-center gap-2">
             <Link
               to="/discovery"
+              title="Request Intelligence Mapping — leads to booking your discovery session"
               className="hidden md:inline-flex items-center rounded-full bg-primary text-primary-foreground px-4 py-2 text-sm font-medium hover:opacity-90 transition shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]"
             >
-              Book Discovery
+              Request Intelligence Mapping
             </Link>
             <button
               aria-label="Menu"

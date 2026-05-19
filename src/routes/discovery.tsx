@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/site/Glass";
 import { useRegion } from "@/hooks/use-region";
-import { supabase } from "@/integrations/supabase/client";
 import { RazorpayButton } from "@/components/site/RazorpayButton";
+import { saveDiscoveryRequest } from "@/lib/discovery.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/discovery")({
   component: DiscoveryPage,
   head: () => ({
     meta: [
-      { title: "Discovery Session — Vishra AI" },
-      { name: "description", content: "Book a Vishra AI discovery session. Premium intelligence mapping for autonomous operations." },
-      { property: "og:title", content: "Discovery Session — Vishra AI" },
+      { title: "Request Intelligence Mapping — Vishra AI" },
+      { name: "description", content: "Request an Intelligence Mapping session with Vishra AI. Premium diagnostic that leads to booking your discovery call." },
+      { property: "og:title", content: "Request Intelligence Mapping — Vishra AI" },
       { property: "og:url", content: "/discovery" },
     ],
     links: [{ rel: "canonical", href: "/discovery" }],
@@ -364,21 +365,22 @@ function PreferencesStep({ form, update }: { form: Form; update: <K extends keyo
 }
 
 function PaymentStep({
-  form, update, region, pricingLabel, onPay, submitting,
+  form, update, region, pricingLabel, paymentId, setPaymentId, onConfirm, submitting,
 }: {
   form: Form;
   update: <K extends keyof Form>(k: K, v: Form[K]) => void;
   region: "IN" | "INTL" | null;
   pricingLabel: string;
-  onPay: () => void;
+  paymentId: string;
+  setPaymentId: (v: string) => void;
+  onConfirm: () => void;
   submitting: boolean;
 }) {
   const ready = form.agree_contact && form.agree_updates;
-  const [saved, setSaved] = useState(false);
 
   return (
     <div className="space-y-6">
-      <StepTitle title="Confirm & pay." subtitle="One last step before we lock in your slot." />
+      <StepTitle title="Pay to confirm." subtitle="Your request is only submitted after payment succeeds." />
 
       <div className="glass rounded-2xl p-6 border-primary/30">
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -407,36 +409,42 @@ function PaymentStep({
       </div>
 
       <div className={`glass rounded-2xl p-6 transition ${ready ? "" : "opacity-40 pointer-events-none"}`}>
-        {!saved ? (
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              Save your request, then complete payment with Razorpay.
-            </p>
-            <button
-              type="button"
-              disabled={!ready || submitting}
-              onClick={async () => {
-                onPay();
-                setSaved(true);
-              }}
-              className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)] disabled:opacity-40"
-            >
-              {submitting ? "Saving…" : `Continue to payment — ${pricingLabel}`}
-            </button>
-          </div>
-        ) : (
-          <div>
-            <p className="text-sm text-center text-muted-foreground mb-4">
-              ✓ Request saved. Complete payment below to confirm your slot.
-            </p>
-            {region && (
-              <RazorpayButton paymentButtonId={region === "IN" ? PAYMENT_BUTTON_IN : PAYMENT_BUTTON_INTL} />
-            )}
-            <p className="mt-4 text-xs text-center text-muted-foreground">
-              Secure payment via Razorpay · {region === "IN" ? "UPI, cards, netbanking" : "International cards"}
-            </p>
-          </div>
+        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-4 text-center">Step 1 — Complete payment</p>
+        {region && (
+          <RazorpayButton paymentButtonId={region === "IN" ? PAYMENT_BUTTON_IN : PAYMENT_BUTTON_INTL} />
         )}
+        <p className="mt-3 text-xs text-center text-muted-foreground">
+          Secure payment via Razorpay · {region === "IN" ? "UPI, cards, netbanking" : "International cards"}
+        </p>
+      </div>
+
+      <div className={`glass rounded-2xl p-6 transition ${ready ? "" : "opacity-40 pointer-events-none"}`}>
+        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-4 text-center">Step 2 — Confirm & submit</p>
+        <label className="block">
+          <span className="block text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
+            Razorpay payment ID <span className="text-primary">*</span>
+          </span>
+          <input
+            type="text"
+            value={paymentId}
+            onChange={(e) => setPaymentId(e.target.value.trim())}
+            placeholder="pay_XXXXXXXXXXXXXX"
+            className="w-full glass rounded-xl px-4 py-3 text-sm bg-transparent outline-none focus:border-primary/60 transition placeholder:text-muted-foreground/50 font-mono"
+          />
+          <span className="block mt-2 text-xs text-muted-foreground">
+            You'll receive this from Razorpay right after a successful payment. We auto-detect it when possible.
+          </span>
+        </label>
+        <div className="mt-5 text-center">
+          <button
+            type="button"
+            disabled={!ready || !paymentId || submitting}
+            onClick={onConfirm}
+            className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)] disabled:opacity-40 disabled:shadow-none"
+          >
+            {submitting ? "Submitting…" : "Confirm payment & submit request"}
+          </button>
+        </div>
       </div>
     </div>
   );
