@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/site/Glass";
 import { useRegion } from "@/hooks/use-region";
-import { supabase } from "@/integrations/supabase/client";
 import { RazorpayButton } from "@/components/site/RazorpayButton";
+import { saveDiscoveryRequest } from "@/lib/discovery.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/discovery")({
   component: DiscoveryPage,
   head: () => ({
     meta: [
-      { title: "Discovery Session — Vishra AI" },
-      { name: "description", content: "Book a Vishra AI discovery session. Premium intelligence mapping for autonomous operations." },
-      { property: "og:title", content: "Discovery Session — Vishra AI" },
+      { title: "Request Intelligence Mapping — Vishra AI" },
+      { name: "description", content: "Request an Intelligence Mapping session with Vishra AI. Premium diagnostic that leads to booking your discovery call." },
+      { property: "og:title", content: "Request Intelligence Mapping — Vishra AI" },
       { property: "og:url", content: "/discovery" },
     ],
     links: [{ rel: "canonical", href: "/discovery" }],
@@ -51,9 +52,11 @@ const PAYMENT_BUTTON_INTL = "pl_SqftnOIdNHw4Sp";
 
 function DiscoveryPage() {
   const { region, country } = useRegion();
+  const save = useServerFn(saveDiscoveryRequest);
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [paymentId, setPaymentId] = useState("");
   const [form, setForm] = useState<Form>({
     full_name: "", work_email: "",
     phone_cc: "+91", phone_number: "",
@@ -66,7 +69,6 @@ function DiscoveryPage() {
     agree_contact: false, agree_updates: false,
   });
 
-  // Default phone country code to detected region
   useEffect(() => {
     if (region === "INTL" && form.phone_cc === "+91") {
       setForm((f) => ({ ...f, phone_cc: "+1", whatsapp_cc: "+1" }));
@@ -75,12 +77,33 @@ function DiscoveryPage() {
 
   const update = <K extends keyof Form>(k: K, v: Form[K]) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Sync whatsapp when "same as phone" toggled
   useEffect(() => {
     if (form.same_as_phone) {
       setForm((f) => ({ ...f, whatsapp_cc: f.phone_cc, whatsapp_number: f.phone_number }));
     }
   }, [form.same_as_phone, form.phone_cc, form.phone_number]);
+
+  // Auto-detect Razorpay payment_id from postMessage events.
+  useEffect(() => {
+    function onMsg(e: MessageEvent) {
+      try {
+        if (typeof e.origin !== "string") return;
+        const host = new URL(e.origin).hostname;
+        if (!/razorpay\.com$/.test(host)) return;
+        const data: any = e.data;
+        if (!data) return;
+        const id = typeof data === "string"
+          ? data.match(/pay_[A-Za-z0-9]+/)?.[0]
+          : data.razorpay_payment_id || data.payment_id || data?.payload?.razorpay_payment_id;
+        if (id && typeof id === "string" && id.startsWith("pay_")) {
+          setPaymentId(id);
+          toast.success("Payment detected. Confirm to submit your request.");
+        }
+      } catch {}
+    }
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
 
   const pricingLabel = region === "IN" ? "₹8,000 INR" : "$400 USD";
 
@@ -96,47 +119,53 @@ function DiscoveryPage() {
     }
   }, [step, form]);
 
-  const submitToSupabase = async () => {
-    setSubmitting(true);
-    const { error } = await supabase.from("discovery_requests").insert({
-      full_name: form.full_name,
-      work_email: form.work_email,
-      phone_number: `${form.phone_cc} ${form.phone_number}`.trim(),
-      whatsapp_number: form.whatsapp_number ? `${form.whatsapp_cc} ${form.whatsapp_number}`.trim() : null,
-      company_name: form.company_name,
-      role: form.role,
-      company_size: form.company_size,
-      industry: form.industry || null,
-      workflows_to_automate: form.workflows_to_automate,
-      current_tech_stack: form.current_tech_stack || null,
-      automation_goals: form.automation_goals,
-      infrastructure_scale: form.infrastructure_scale || null,
-      operations_volume: form.operations_volume || null,
-      preferred_contact_method: form.preferred_contact_method.length ? form.preferred_contact_method : null,
-      additional_notes: form.additional_notes || null,
-      user_country: country,
-      payment_region: region ?? "INTL",
-      selected_pricing: region === "IN" ? "INR_8000" : "USD_400",
-      payment_status: "initiated",
-    });
-    setSubmitting(false);
-    if (error) {
-      toast.error("Couldn't save your request. Please try again.");
-      return false;
+  const submitAfterPayment = async () => {
+    if (!paymentId) {
+      toast.error("Enter your Razorpay payment ID after completing payment.");
+      return;
     }
-    return true;
+    setSubmitting(true);
+    try {
+      await save({ data: {
+        full_name: form.full_name,
+        work_email: form.work_email,
+        phone_number: `${form.phone_cc} ${form.phone_number}`.trim(),
+        whatsapp_number: form.whatsapp_number ? `${form.whatsapp_cc} ${form.whatsapp_number}`.trim() : null,
+        company_name: form.company_name,
+        role: form.role,
+        company_size: form.company_size,
+        industry: form.industry || null,
+        workflows_to_automate: form.workflows_to_automate,
+        current_tech_stack: form.current_tech_stack || null,
+        automation_goals: form.automation_goals,
+        infrastructure_scale: form.infrastructure_scale || null,
+        operations_volume: form.operations_volume || null,
+        preferred_contact_method: form.preferred_contact_method.length ? form.preferred_contact_method : null,
+        additional_notes: form.additional_notes || null,
+        user_country: country,
+        payment_region: (region ?? "INTL") as "IN" | "INTL",
+        selected_pricing: region === "IN" ? "INR_8000" : "USD_400",
+        razorpay_payment_id: paymentId,
+      } });
+      setSubmitted(true);
+    } catch (err: any) {
+      console.error(err);
+      toast.error("Couldn't save your request. Make sure MongoDB is reachable from the server.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <PageShell>
       <section className="px-6">
         <div className="mx-auto max-w-5xl text-center">
-          <span className="inline-block glass rounded-full px-3 py-1 text-xs uppercase tracking-[0.2em] text-primary mb-6">Discovery</span>
+          <span className="inline-block glass rounded-full px-3 py-1 text-xs uppercase tracking-[0.2em] text-primary mb-6">Intelligence Mapping</span>
           <h1 className="text-5xl md:text-7xl font-semibold text-gradient leading-[1.05]">
-            Map your operations.<br />Architect autonomy.
+            Request Intelligence Mapping.
           </h1>
           <p className="mt-6 mx-auto max-w-2xl text-muted-foreground">
-            A 60-minute diagnostic with our team. Tell us about your operations — we'll respond via email and WhatsApp.
+            This request leads to booking your discovery session — a 60-minute diagnostic with our team. Submission is confirmed only after payment succeeds.
           </p>
         </div>
       </section>
@@ -160,15 +189,10 @@ function DiscoveryPage() {
                   update={update}
                   region={region}
                   pricingLabel={pricingLabel}
+                  paymentId={paymentId}
+                  setPaymentId={setPaymentId}
                   submitting={submitting}
-                  onPay={async () => {
-                    const ok = await submitToSupabase();
-                    if (ok) {
-                      toast.success("Request saved. Complete payment to confirm.");
-                      // Show success after a short delay so the Razorpay button is still usable
-                      setTimeout(() => setSubmitted(true), 800);
-                    }
-                  }}
+                  onConfirm={submitAfterPayment}
                 />
               )}
 
@@ -191,8 +215,8 @@ function DiscoveryPage() {
                     Continue
                   </button>
                 ) : (
-                  <span className="text-xs text-muted-foreground max-w-[220px] text-right">
-                    Accept both confirmations to enable payment.
+                  <span className="text-xs text-muted-foreground max-w-[260px] text-right">
+                    Pay first, then confirm with your Razorpay payment ID.
                   </span>
                 )}
               </div>
@@ -364,21 +388,22 @@ function PreferencesStep({ form, update }: { form: Form; update: <K extends keyo
 }
 
 function PaymentStep({
-  form, update, region, pricingLabel, onPay, submitting,
+  form, update, region, pricingLabel, paymentId, setPaymentId, onConfirm, submitting,
 }: {
   form: Form;
   update: <K extends keyof Form>(k: K, v: Form[K]) => void;
   region: "IN" | "INTL" | null;
   pricingLabel: string;
-  onPay: () => void;
+  paymentId: string;
+  setPaymentId: (v: string) => void;
+  onConfirm: () => void;
   submitting: boolean;
 }) {
   const ready = form.agree_contact && form.agree_updates;
-  const [saved, setSaved] = useState(false);
 
   return (
     <div className="space-y-6">
-      <StepTitle title="Confirm & pay." subtitle="One last step before we lock in your slot." />
+      <StepTitle title="Pay to confirm." subtitle="Your request is only submitted after payment succeeds." />
 
       <div className="glass rounded-2xl p-6 border-primary/30">
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -407,36 +432,42 @@ function PaymentStep({
       </div>
 
       <div className={`glass rounded-2xl p-6 transition ${ready ? "" : "opacity-40 pointer-events-none"}`}>
-        {!saved ? (
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-4">
-              Save your request, then complete payment with Razorpay.
-            </p>
-            <button
-              type="button"
-              disabled={!ready || submitting}
-              onClick={async () => {
-                onPay();
-                setSaved(true);
-              }}
-              className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)] disabled:opacity-40"
-            >
-              {submitting ? "Saving…" : `Continue to payment — ${pricingLabel}`}
-            </button>
-          </div>
-        ) : (
-          <div>
-            <p className="text-sm text-center text-muted-foreground mb-4">
-              ✓ Request saved. Complete payment below to confirm your slot.
-            </p>
-            {region && (
-              <RazorpayButton paymentButtonId={region === "IN" ? PAYMENT_BUTTON_IN : PAYMENT_BUTTON_INTL} />
-            )}
-            <p className="mt-4 text-xs text-center text-muted-foreground">
-              Secure payment via Razorpay · {region === "IN" ? "UPI, cards, netbanking" : "International cards"}
-            </p>
-          </div>
+        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-4 text-center">Step 1 — Complete payment</p>
+        {region && (
+          <RazorpayButton paymentButtonId={region === "IN" ? PAYMENT_BUTTON_IN : PAYMENT_BUTTON_INTL} />
         )}
+        <p className="mt-3 text-xs text-center text-muted-foreground">
+          Secure payment via Razorpay · {region === "IN" ? "UPI, cards, netbanking" : "International cards"}
+        </p>
+      </div>
+
+      <div className={`glass rounded-2xl p-6 transition ${ready ? "" : "opacity-40 pointer-events-none"}`}>
+        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-4 text-center">Step 2 — Confirm & submit</p>
+        <label className="block">
+          <span className="block text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
+            Razorpay payment ID <span className="text-primary">*</span>
+          </span>
+          <input
+            type="text"
+            value={paymentId}
+            onChange={(e) => setPaymentId(e.target.value.trim())}
+            placeholder="pay_XXXXXXXXXXXXXX"
+            className="w-full glass rounded-xl px-4 py-3 text-sm bg-transparent outline-none focus:border-primary/60 transition placeholder:text-muted-foreground/50 font-mono"
+          />
+          <span className="block mt-2 text-xs text-muted-foreground">
+            You'll receive this from Razorpay right after a successful payment. We auto-detect it when possible.
+          </span>
+        </label>
+        <div className="mt-5 text-center">
+          <button
+            type="button"
+            disabled={!ready || !paymentId || submitting}
+            onClick={onConfirm}
+            className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)] disabled:opacity-40 disabled:shadow-none"
+          >
+            {submitting ? "Submitting…" : "Confirm payment & submit request"}
+          </button>
+        </div>
       </div>
     </div>
   );

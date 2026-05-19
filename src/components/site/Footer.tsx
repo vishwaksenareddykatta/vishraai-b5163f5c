@@ -65,7 +65,7 @@ export function Footer() {
             <ul className="space-y-2 text-sm text-muted-foreground">
               <li><Link to="/about" className="hover:text-foreground">About</Link></li>
               <li><Link to="/contact" className="hover:text-foreground">Contact</Link></li>
-              <li><a href="#" className="hover:text-foreground">NexVark Industries</a></li>
+              <li><a href="https://www.nexvarkindustries.com/" target="_blank" rel="noopener noreferrer" className="hover:text-foreground">NexVark Industries</a></li>
             </ul>
           </div>
         </div>
