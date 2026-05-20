@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import logo from "@/assets/vishra-logo.png";
-import { supabase } from "@/integrations/supabase/client";
+import { apiPost } from "@/lib/api";
 import { toast } from "sonner";
 
 export function Footer() {
@@ -12,17 +12,19 @@ export function Footer() {
     e.preventDefault();
     if (!email) return;
     setLoading(true);
-    const { error } = await supabase
-      .from("newsletter_subscribers")
-      .insert({ email, source: "footer" });
-    setLoading(false);
-    if (error) {
-      if (error.code === "23505") toast.success("You're already subscribed.");
-      else toast.error("Could not subscribe. Try again.");
-      return;
+    try {
+      const res = await apiPost<{ ok: true; duplicate?: boolean }>("/api/newsletter", {
+        email,
+        source: "footer",
+      });
+      if (res.duplicate) toast.success("You're already subscribed.");
+      else toast.success("Subscribed. Welcome to Vishra signal.");
+      setEmail("");
+    } catch (err: any) {
+      toast.error(err?.message || "Could not subscribe. Try again.");
+    } finally {
+      setLoading(false);
     }
-    toast.success("Subscribed. Welcome to Vishra signal.");
-    setEmail("");
   };
 
   return (
