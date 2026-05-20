@@ -239,10 +239,8 @@ function DiscoveryPage() {
                   update={update}
                   region={region}
                   pricingLabel={pricingLabel}
-                  paymentId={paymentId}
-                  setPaymentId={setPaymentId}
                   submitting={submitting}
-                  onConfirm={submitAfterPayment}
+                  onPay={payAndSubmit}
                 />
               )}
 
@@ -266,7 +264,7 @@ function DiscoveryPage() {
                   </button>
                 ) : (
                   <span className="text-xs text-muted-foreground max-w-[260px] text-right">
-                    Pay first, then confirm with your Razorpay payment ID.
+                    Your details are saved only after payment is verified.
                   </span>
                 )}
               </div>
