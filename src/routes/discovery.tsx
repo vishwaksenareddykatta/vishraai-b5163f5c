@@ -223,7 +223,7 @@ function DiscoveryPage() {
       <section className="px-6 py-12">
         <div className="mx-auto max-w-3xl">
           {submitted ? (
-            <SuccessCard />
+            <SuccessCard bookingUrl={bookingUrl} />
           ) : (
             <div className="glass rounded-3xl p-6 md:p-10">
               <ProgressBar step={step} />
