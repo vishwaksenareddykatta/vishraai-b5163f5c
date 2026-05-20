@@ -436,22 +436,20 @@ function PreferencesStep({ form, update }: { form: Form; update: <K extends keyo
 }
 
 function PaymentStep({
-  form, update, region, pricingLabel, paymentId, setPaymentId, onConfirm, submitting,
+  form, update, region, pricingLabel, onPay, submitting,
 }: {
   form: Form;
   update: <K extends keyof Form>(k: K, v: Form[K]) => void;
   region: "IN" | "INTL" | null;
   pricingLabel: string;
-  paymentId: string;
-  setPaymentId: (v: string) => void;
-  onConfirm: () => void;
+  onPay: () => void;
   submitting: boolean;
 }) {
   const ready = form.agree_contact && form.agree_updates;
 
   return (
     <div className="space-y-6">
-      <StepTitle title="Pay to confirm." subtitle="Your request is only submitted after payment succeeds." />
+      <StepTitle title="Pay to confirm." subtitle="Your details are saved only after Razorpay verifies the payment." />
 
       <div className="glass rounded-2xl p-6 border-primary/30">
         <div className="flex items-start justify-between gap-4 flex-wrap">
@@ -479,72 +477,51 @@ function PaymentStep({
         />
       </div>
 
-      <div className={`glass rounded-2xl p-6 transition ${ready ? "" : "opacity-40 pointer-events-none"}`}>
-        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-4 text-center">Step 1 — Complete payment</p>
-        {region && (
-          <RazorpayButton paymentButtonId={region === "IN" ? PAYMENT_BUTTON_IN : PAYMENT_BUTTON_INTL} />
-        )}
-        <p className="mt-3 text-xs text-center text-muted-foreground">
-          Secure payment via Razorpay · {region === "IN" ? "UPI, cards, netbanking" : "International cards"}
+      <div className={`glass rounded-2xl p-6 text-center transition ${ready ? "" : "opacity-40 pointer-events-none"}`}>
+        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-4">Secure payment via Razorpay</p>
+        <button
+          type="button"
+          disabled={!ready || submitting || region === null}
+          onClick={onPay}
+          className="rounded-full bg-primary text-primary-foreground px-8 py-3.5 text-sm font-semibold shadow-[0_0_28px_oklch(0.78_0.18_215/0.55)] disabled:opacity-40 disabled:shadow-none"
+        >
+          {submitting ? "Opening Razorpay…" : `Pay ${pricingLabel} & Submit`}
+        </button>
+        <p className="mt-3 text-xs text-muted-foreground">
+          {region === "IN" ? "UPI, cards, netbanking" : "International cards"} · Payment is verified server-side before your request is saved.
         </p>
-      </div>
-
-      <div className={`glass rounded-2xl p-6 transition ${ready ? "" : "opacity-40 pointer-events-none"}`}>
-        <p className="text-xs uppercase tracking-[0.15em] text-muted-foreground mb-4 text-center">Step 2 — Confirm & submit</p>
-        <label className="block">
-          <span className="block text-xs uppercase tracking-[0.15em] text-muted-foreground mb-2">
-            Razorpay payment ID <span className="text-primary">*</span>
-          </span>
-          <input
-            type="text"
-            value={paymentId}
-            onChange={(e) => setPaymentId(e.target.value.trim())}
-            placeholder="pay_XXXXXXXXXXXXXX"
-            className="w-full glass rounded-xl px-4 py-3 text-sm bg-transparent outline-none focus:border-primary/60 transition placeholder:text-muted-foreground/50 font-mono"
-          />
-          <span className="block mt-2 text-xs text-muted-foreground">
-            You'll receive this from Razorpay right after a successful payment. We auto-detect it when possible.
-          </span>
-        </label>
-        <div className="mt-5 text-center">
-          <button
-            type="button"
-            disabled={!ready || !paymentId || submitting}
-            onClick={onConfirm}
-            className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-semibold shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)] disabled:opacity-40 disabled:shadow-none"
-          >
-            {submitting ? "Submitting…" : "Confirm payment & submit request"}
-          </button>
-        </div>
       </div>
     </div>
   );
 }
 
-function SuccessCard() {
+function SuccessCard({ bookingUrl }: { bookingUrl: string }) {
   return (
-    <div className="glass rounded-3xl p-10 md:p-14 text-center">
+    <div className="glass rounded-3xl p-10 md:p-14 text-center animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="mx-auto h-20 w-20 rounded-full bg-primary/15 border border-primary/50 flex items-center justify-center text-3xl text-primary mb-6 shadow-[0_0_32px_oklch(0.78_0.18_215/0.5)]">
         ✓
       </div>
       <h2 className="font-display text-3xl md:text-4xl font-semibold text-gradient">
-        Request submitted.
+        Payment verified.
       </h2>
       <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-        Your discovery session request has been successfully submitted. Our team will review your request and contact you through <span className="text-foreground font-medium">Email</span> and/or <span className="text-foreground font-medium">WhatsApp</span> with further updates.
+        Your Intelligence Mapping request has been securely recorded. The final step is yours — book your appointment with our team.
       </p>
-      <p className="mt-4 text-sm text-muted-foreground">
-        Please monitor your inbox and WhatsApp for further communication.
-      </p>
-      <div className="mt-8 grid grid-cols-2 gap-3 max-w-md mx-auto">
-        <div className="glass rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground">Response window</p>
-          <p className="mt-1 font-semibold text-glow">&lt; 24h</p>
-        </div>
-        <div className="glass rounded-2xl p-4">
-          <p className="text-xs text-muted-foreground">Channels</p>
-          <p className="mt-1 font-semibold">Email · WhatsApp</p>
-        </div>
+
+      <div className="mt-10 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-200 fill-mode-both">
+        <p className="text-xs uppercase tracking-[0.25em] text-primary mb-3">Final step</p>
+        <h3 className="font-display text-2xl md:text-3xl font-semibold mb-5">Book Your Appointment Now</h3>
+        <a
+          href={bookingUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-8 py-3.5 text-sm font-semibold shadow-[0_0_32px_oklch(0.78_0.18_215/0.6)] hover:opacity-90 transition"
+        >
+          Open Booking Calendar →
+        </a>
+        <p className="mt-4 text-xs text-muted-foreground">
+          You'll also receive confirmation via Email and WhatsApp.
+        </p>
       </div>
     </div>
   );
