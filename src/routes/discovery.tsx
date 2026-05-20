@@ -1,11 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { PageShell } from "@/components/site/Glass";
 import { useRegion } from "@/hooks/use-region";
-import { RazorpayButton } from "@/components/site/RazorpayButton";
-import { saveDiscoveryRequest } from "@/lib/discovery.functions";
+import { apiPost } from "@/lib/api";
 import { toast } from "sonner";
+
+declare global {
+  interface Window { Razorpay?: any }
+}
+
+function loadRazorpay(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === "undefined") return resolve(false);
+    if (window.Razorpay) return resolve(true);
+    const s = document.createElement("script");
+    s.src = "https://checkout.razorpay.com/v1/checkout.js";
+    s.onload = () => resolve(true);
+    s.onerror = () => resolve(false);
+    document.body.appendChild(s);
+  });
+}
 
 export const Route = createFileRoute("/discovery")({
   component: DiscoveryPage,
@@ -47,16 +61,12 @@ const STEPS = ["Contact", "Business", "Operations", "Scale", "Preferences", "Pay
 
 const COUNTRY_CODES = ["+91", "+1", "+44", "+61", "+971", "+65", "+49", "+33", "+81", "+86"];
 
-const PAYMENT_BUTTON_IN = "pl_Sqfl0EzY7cF6Nq";
-const PAYMENT_BUTTON_INTL = "pl_SqftnOIdNHw4Sp";
-
 function DiscoveryPage() {
   const { region, country } = useRegion();
-  const save = useServerFn(saveDiscoveryRequest);
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [paymentId, setPaymentId] = useState("");
+  const [bookingUrl, setBookingUrl] = useState<string>("https://calendar.app.google/6uwUaXwsRyPJ3yDB6");
   const [form, setForm] = useState<Form>({
     full_name: "", work_email: "",
     phone_cc: "+91", phone_number: "",
