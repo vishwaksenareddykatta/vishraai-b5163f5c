@@ -93,28 +93,6 @@ function DiscoveryPage() {
     }
   }, [form.same_as_phone, form.phone_cc, form.phone_number]);
 
-  // Auto-detect Razorpay payment_id from postMessage events.
-  useEffect(() => {
-    function onMsg(e: MessageEvent) {
-      try {
-        if (typeof e.origin !== "string") return;
-        const host = new URL(e.origin).hostname;
-        if (!/razorpay\.com$/.test(host)) return;
-        const data: any = e.data;
-        if (!data) return;
-        const id = typeof data === "string"
-          ? data.match(/pay_[A-Za-z0-9]+/)?.[0]
-          : data.razorpay_payment_id || data.payment_id || data?.payload?.razorpay_payment_id;
-        if (id && typeof id === "string" && id.startsWith("pay_")) {
-          setPaymentId(id);
-          toast.success("Payment detected. Confirm to submit your request.");
-        }
-      } catch {}
-    }
-    window.addEventListener("message", onMsg);
-    return () => window.removeEventListener("message", onMsg);
-  }, []);
-
   const pricingLabel = region === "IN" ? "₹8,000 INR" : "$400 USD";
 
   const canProceed = useMemo(() => {
@@ -129,42 +107,104 @@ function DiscoveryPage() {
     }
   }, [step, form]);
 
-  const submitAfterPayment = async () => {
-    if (!paymentId) {
-      toast.error("Enter your Razorpay payment ID after completing payment.");
+  const payAndSubmit = async () => {
+    if (!form.agree_contact || !form.agree_updates) {
+      toast.error("Please confirm the consent options first.");
       return;
     }
+    if (submitting) return;
     setSubmitting(true);
-    try {
-      await save({ data: {
-        full_name: form.full_name,
-        work_email: form.work_email,
-        phone_number: `${form.phone_cc} ${form.phone_number}`.trim(),
-        whatsapp_number: form.whatsapp_number ? `${form.whatsapp_cc} ${form.whatsapp_number}`.trim() : null,
-        company_name: form.company_name,
-        role: form.role,
-        company_size: form.company_size,
-        industry: form.industry || null,
-        workflows_to_automate: form.workflows_to_automate,
-        current_tech_stack: form.current_tech_stack || null,
-        automation_goals: form.automation_goals,
-        infrastructure_scale: form.infrastructure_scale || null,
-        operations_volume: form.operations_volume || null,
-        preferred_contact_method: form.preferred_contact_method.length ? form.preferred_contact_method : null,
-        additional_notes: form.additional_notes || null,
-        user_country: country,
-        payment_region: (region ?? "INTL") as "IN" | "INTL",
-        selected_pricing: region === "IN" ? "INR_8000" : "USD_400",
-        razorpay_payment_id: paymentId,
-      } });
-      setSubmitted(true);
-    } catch (err: any) {
-      console.error(err);
-      toast.error("Couldn't save your request. Make sure MongoDB is reachable from the server.");
-    } finally {
+
+    const ok = await loadRazorpay();
+    if (!ok) {
       setSubmitting(false);
+      toast.error("Could not load Razorpay. Check your connection and try again.");
+      return;
     }
+
+    const payment_region: "IN" | "INTL" = region === "IN" ? "IN" : "INTL";
+
+    let order: { ok: true; order_id: string; amount: number; currency: string; key_id: string };
+    try {
+      order = await apiPost("/api/rim/create", { payment_region });
+    } catch (err: any) {
+      setSubmitting(false);
+      toast.error(err?.message || "Could not start payment.");
+      return;
+    }
+
+    const formPayload = {
+      full_name: form.full_name,
+      work_email: form.work_email,
+      phone_number: `${form.phone_cc} ${form.phone_number}`.trim(),
+      whatsapp_number: form.whatsapp_number
+        ? `${form.whatsapp_cc} ${form.whatsapp_number}`.trim()
+        : "",
+      company_name: form.company_name,
+      role: form.role,
+      company_size: form.company_size,
+      industry: form.industry || "",
+      workflows_to_automate: form.workflows_to_automate,
+      current_tech_stack: form.current_tech_stack || "",
+      automation_goals: form.automation_goals,
+      infrastructure_scale: form.infrastructure_scale || "",
+      operations_volume: form.operations_volume || "",
+      preferred_contact_method: form.preferred_contact_method,
+      additional_notes: form.additional_notes || "",
+      user_country: country || "",
+      payment_region,
+      selected_pricing: payment_region === "IN" ? "INR_8000" : "USD_400",
+    };
+
+    const rzp = new window.Razorpay({
+      key: order.key_id,
+      amount: order.amount,
+      currency: order.currency,
+      order_id: order.order_id,
+      name: "Vishra AI",
+      description: "Intelligence Mapping — Discovery Session",
+      prefill: {
+        name: form.full_name,
+        email: form.work_email,
+        contact: `${form.phone_cc}${form.phone_number}`,
+      },
+      theme: { color: "#3aa7ff" },
+      modal: {
+        ondismiss: () => {
+          setSubmitting(false);
+          toast.message("Payment cancelled.");
+        },
+      },
+      handler: async (resp: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
+        try {
+          const verified = await apiPost<{ ok: true; booking_url: string }>(
+            "/api/rim/payment/verify",
+            {
+              razorpay_order_id: resp.razorpay_order_id,
+              razorpay_payment_id: resp.razorpay_payment_id,
+              razorpay_signature: resp.razorpay_signature,
+              form: formPayload,
+            }
+          );
+          if (verified.booking_url) setBookingUrl(verified.booking_url);
+          setSubmitted(true);
+          toast.success("Payment verified. Booking link unlocked.");
+        } catch (err: any) {
+          toast.error(err?.message || "Payment verification failed.");
+        } finally {
+          setSubmitting(false);
+        }
+      },
+    });
+
+    rzp.on?.("payment.failed", (resp: any) => {
+      setSubmitting(false);
+      toast.error(resp?.error?.description || "Payment failed.");
+    });
+
+    rzp.open();
   };
+
 
   return (
     <PageShell>
