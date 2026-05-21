@@ -83,7 +83,7 @@ function HomePage() {
             AI infrastructure, autonomous systems and intelligent operations engineered for the operating cadence of modern enterprises.
           </p>
           <div className="relative mt-10 flex flex-wrap items-center justify-center gap-3">
-            <Link to="/contact" className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-medium shadow-[0_0_32px_oklch(0.78_0.18_215/0.55)] hover:opacity-90 transition">
+            <Link to="/discovery" className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-medium shadow-[0_0_32px_oklch(0.78_0.18_215/0.55)] hover:opacity-90 transition">
               Request Intelligence Mapping
             </Link>
             <Link to="/solutions" className="glass rounded-full px-6 py-3 text-sm font-medium hover:border-white/20">
@@ -236,7 +236,7 @@ function HomePage() {
           <h2 className="text-5xl md:text-6xl font-semibold text-gradient">Build the future of operations.</h2>
           <p className="mt-6 text-muted-foreground">Map your intelligence surface in 30 minutes.</p>
           <div className="mt-10 flex flex-wrap justify-center gap-3">
-            <Link to="/contact" className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-medium shadow-[0_0_32px_oklch(0.78_0.18_215/0.55)]">
+            <Link to="/discovery" className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-medium shadow-[0_0_32px_oklch(0.78_0.18_215/0.55)]">
               Book Intelligence Mapping
             </Link>
             <Link to="/solutions" className="glass rounded-full px-6 py-3 text-sm font-medium">

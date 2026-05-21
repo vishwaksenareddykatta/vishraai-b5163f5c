@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { Menu, X } from "lucide-react";
 import logo from "@/assets/vishra-logo.png";
 
 const links = [
@@ -14,6 +15,7 @@ const links = [
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const location = useLocation();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 16);
@@ -21,6 +23,20 @@ export function Nav() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // Close on route change
+  useEffect(() => {
+    setOpen(false);
+  }, [location.pathname]);
+
+  // Lock body scroll while mobile menu open
+  useEffect(() => {
+    if (open) {
+      const prev = document.body.style.overflow;
+      document.body.style.overflow = "hidden";
+      return () => { document.body.style.overflow = prev; };
+    }
+  }, [open]);
 
   return (
     <header className="fixed top-0 inset-x-0 z-50 px-4 pt-4">
@@ -59,30 +75,50 @@ export function Nav() {
               Request Intelligence Mapping
             </Link>
             <button
-              aria-label="Menu"
+              aria-label={open ? "Close menu" : "Open menu"}
+              aria-expanded={open}
               onClick={() => setOpen(!open)}
-              className="md:hidden glass rounded-full px-3 py-2 text-sm"
+              className="md:hidden glass rounded-full h-10 w-10 inline-flex items-center justify-center text-foreground"
             >
-              {open ? "Close" : "Menu"}
+              {open ? <X size={18} /> : <Menu size={18} />}
             </button>
           </div>
         </div>
-        {open && (
-          <ul className="md:hidden mt-3 flex flex-col gap-1 px-2 pb-2">
-            {links.map((l) => (
+      </nav>
+
+      {/* Mobile menu panel */}
+      {open && (
+        <div
+          className="md:hidden mt-3 mx-auto max-w-6xl glass rounded-3xl p-2 animate-in fade-in slide-in-from-top-2 duration-200"
+        >
+          <ul className="flex flex-col">
+            {links.map((l, i) => (
               <li key={l.to}>
                 <Link
                   to={l.to}
                   onClick={() => setOpen(false)}
-                  className="block px-3 py-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-white/5"
+                  className="flex items-center justify-between px-5 py-4 min-h-[52px] text-base text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-2xl transition-colors"
+                  activeProps={{ className: "flex items-center justify-between px-5 py-4 min-h-[52px] text-base text-foreground bg-white/5 rounded-2xl" }}
+                  activeOptions={{ exact: l.to === "/" }}
                 >
-                  {l.label}
+                  <span>{l.label}</span>
+                  <span className="text-muted-foreground/60">→</span>
                 </Link>
+                {i < links.length - 1 && <div className="h-px bg-white/5 mx-5" />}
               </li>
             ))}
           </ul>
-        )}
-      </nav>
+          <div className="p-3 pt-4">
+            <Link
+              to="/discovery"
+              onClick={() => setOpen(false)}
+              className="flex items-center justify-center w-full rounded-full bg-primary text-primary-foreground px-5 py-3.5 text-sm font-medium shadow-[0_0_24px_oklch(0.78_0.18_215/0.5)]"
+            >
+              Request Intelligence Mapping
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 }
