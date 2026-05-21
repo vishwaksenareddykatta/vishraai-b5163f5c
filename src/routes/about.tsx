@@ -84,7 +84,7 @@ function AboutPage() {
       </section>
 
       <section className="px-6 py-24 text-center">
-        <Link to="/contact" className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-medium shadow-[0_0_32px_oklch(0.78_0.18_215/0.55)]">
+        <Link to="/discovery" className="rounded-full bg-primary text-primary-foreground px-6 py-3 text-sm font-medium shadow-[0_0_32px_oklch(0.78_0.18_215/0.55)]">
           Partner with Vishra
         </Link>
       </section>
