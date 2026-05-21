@@ -89,7 +89,7 @@ export function Nav() {
       {/* Mobile menu panel */}
       {open && (
         <div
-          className="md:hidden mt-3 mx-auto max-w-6xl glass rounded-3xl p-2 animate-in fade-in slide-in-from-top-2 duration-200"
+          className="md:hidden mt-3 mx-auto max-w-6xl glass rounded-3xl p-2 animate-in fade-in slide-in-from-top-2 duration-200 bg-[oklch(0.08_0.02_270/0.92)]"
         >
           <ul className="flex flex-col">
             {links.map((l, i) => (
