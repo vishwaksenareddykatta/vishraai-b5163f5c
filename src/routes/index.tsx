@@ -7,6 +7,7 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Vishra AI — Engineering Autonomous Intelligence" },
       { name: "description", content: "AI infrastructure, autonomous systems and intelligent operations engineered for modern enterprises." },
+      { name: "google-site-verification", content: "eAM8dox8IZxx1LsyCo9cO9lw0aHkZ6IjzcbZSQRTOfk" },
       { property: "og:title", content: "Vishra AI — Engineering Autonomous Intelligence" },
       { property: "og:url", content: "/" },
     ],
