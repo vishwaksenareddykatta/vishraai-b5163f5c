@@ -110,8 +110,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           gtag('config', 'G-933C1LLH5P');
         `,
       },
-    ],
-    scripts: [
       {
         type: "application/ld+json",
         children: JSON.stringify({
