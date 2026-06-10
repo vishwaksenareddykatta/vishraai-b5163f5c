@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -15,6 +16,13 @@ import { AmbientBackground } from "@/components/site/Background";
 import { Toaster } from "@/components/ui/sonner";
 import { startRegionDetection } from "@/lib/region";
 import { useEffect } from "react";
+
+declare global {
+  interface Window {
+    gtag: (...args: unknown[]) => void;
+    dataLayer: unknown[];
+  }
+}
 
 function NotFoundComponent() {
   return (
