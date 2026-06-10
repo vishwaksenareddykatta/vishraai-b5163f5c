@@ -153,8 +153,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const search = useRouterState({ select: (s) => s.location.search });
 
   useEffect(() => { void startRegionDetection(); }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", "page_view", {
+        page_path: pathname + search,
+        page_title: document.title,
+      });
+    }
+  }, [pathname, search]);
 
   return (
     <QueryClientProvider client={queryClient}>
