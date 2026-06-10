@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
@@ -15,6 +16,13 @@ import { AmbientBackground } from "@/components/site/Background";
 import { Toaster } from "@/components/ui/sonner";
 import { startRegionDetection } from "@/lib/region";
 import { useEffect } from "react";
+
+declare global {
+  interface Window {
+    gtag: (...args: unknown[]) => void;
+    dataLayer: unknown[];
+  }
+}
 
 function NotFoundComponent() {
   return (
@@ -145,8 +153,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const search = useRouterState({ select: (s) => s.location.search });
 
   useEffect(() => { void startRegionDetection(); }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", "page_view", {
+        page_path: pathname + search,
+        page_title: document.title,
+      });
+    }
+  }, [pathname, search]);
 
   return (
     <QueryClientProvider client={queryClient}>
